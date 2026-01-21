@@ -33,7 +33,29 @@ svg {
     stroke: rgb(200,0,0);
     stroke-width: 1px;
 }
-.tooltip { position: absolute; background: #fff; border: 1px solid #ccc; padding: 5px; pointer-events: none; opacity: 0; }
+.tooltip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate3d(0,0,0);
+    will-change: transform, opacity;
+    pointer-events: none;
+    opacity: 0;
+    background: rgba(17,17,17,0.92);
+    color: #fff;
+    padding: 6px 8px;
+    font-size: 13px;
+    line-height: 1;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+    transition: opacity 160ms ease, transform 160ms ease;
+    z-index: 9999;
+    white-space: nowrap;
+    font-family: var(--ui-font);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
 .popup {
     position: absolute;
     left: 0;
@@ -44,8 +66,10 @@ svg {
     pointer-events: auto;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 220ms cubic-bezier(.2,.9,.2,1), transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms ease;
-    transform: translate3d(0,6px,0) scale(.98);
+    transition: opacity 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms ease;
+    --popup-left: 0px;
+    --popup-top: 0px;
+    transform: translate3d(var(--popup-left), var(--popup-top), 0) scale(1);
     max-width: var(--popup-max-width);
     white-space: normal;
     word-wrap: break-word;
@@ -59,8 +83,9 @@ svg {
     color: var(--popup-color);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    will-change: transform, left, top, opacity;
-    transform-origin: 0 0;
+    will-change: transform, opacity;
+    transform-origin: 50% 0;
+    backface-visibility: hidden;
 }
 .popup--large { max-width: clamp(360px, 40vw, 760px); }
 
@@ -110,16 +135,16 @@ svg {
 .popup.open {
     opacity: 1;
     visibility: visible;
-    transform: translate3d(0,0,0) scale(1);
     box-shadow: 0 12px 36px rgba(0,0,0,0.12);
 }
 
 .tooltip {
+    /* kept for specificity in case of re-ordering; styles are consolidated above */
     left: 0;
     top: 0;
     transform: translate3d(0,0,0);
     will-change: transform, opacity;
-    transition: opacity 140ms linear;
+    transition: opacity 160ms ease, transform 160ms ease;
 }
 
 @media (prefers-reduced-motion: reduce) {

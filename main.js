@@ -137,6 +137,21 @@ popup.append('div').attr('class', 'popup-content');
 const popupNode = popup.node();
 let popupPending = false;
 let popupLastEvent = null;
+let popupRectCached = null;
+function svgPointToClient(x, y) {
+    try {
+        const svgEl = svg.node();
+        if (!svgEl || !svgEl.createSVGPoint) return null;
+        const pt = svgEl.createSVGPoint();
+        pt.x = x; pt.y = y;
+        const screen = pt.matrixTransform(svgEl.getScreenCTM());
+        const clientX = screen.x;
+        const clientY = screen.y;
+        const pageX = clientX + (window.scrollX || window.pageXOffset || 0);
+        const pageY = clientY + (window.scrollY || window.pageYOffset || 0);
+        return { pageX, pageY, clientX, clientY };
+    } catch (e) { return null; }
+}
 function schedulePopupPosition() {
     if (popupPending) return;
     popupPending = true;
@@ -156,8 +171,12 @@ function updatePopupPosition(event) {
         const px = isFixed ? (event.clientX || (event.pageX - (window.scrollX||0))) : (event.pageX || (event.clientX + (window.scrollX||0)));
         const py = isFixed ? (event.clientY || (event.pageY - (window.scrollY||0))) : (event.pageY || (event.clientY + (window.scrollY||0)));
         const node = popup.node();
-        const pw = (node && node.offsetWidth) || 200;
-        const ph = (node && node.offsetHeight) || 100;
+        // Cache the measured rect to avoid repeated layout reads; invalidate when content changes
+        if (!popupRectCached) {
+            try { popupRectCached = node.getBoundingClientRect(); } catch (e) { popupRectCached = null; }
+        }
+        const pw = (popupRectCached && popupRectCached.width) || (node && node.offsetWidth) || 200;
+        const ph = (popupRectCached && popupRectCached.height) || (node && node.offsetHeight) || 100;
         const vpLeft = isFixed ? 0 : (window.scrollX || window.pageXOffset);
         const vpTop = isFixed ? 0 : (window.scrollY || window.pageYOffset);
         const vpRight = vpLeft + window.innerWidth;
@@ -187,14 +206,25 @@ function updatePopupPosition(event) {
 
         const finalLeft = Math.round(left);
         const finalTop = Math.round(top);
-        // Use translate3d for GPU-accelerated positioning
+        // Set CSS variables for translation so the CSS can manage scale transitions
         if (popup.node()) {
-            // When fixed, transform translates relative to viewport; when absolute, translate relative to page,
-            // but using page coordinates with translate3d works when body origin is at (0,0).
-            popup.node().style.transform = `translate3d(${finalLeft}px, ${finalTop}px, 0)` + (popup.classed('open') ? ' scale(1)' : ' scale(.98)');
+            try {
+                popup.node().style.setProperty('--popup-left', finalLeft + 'px');
+                popup.node().style.setProperty('--popup-top', finalTop + 'px');
+            } catch (e) {
+                // fallback to inline transform if CSS variables unsupported
+                popup.node().style.transform = `translate3d(${finalLeft}px, ${finalTop}px, 0)` + (popup.classed('open') ? ' scale(1)' : ' scale(.98)');
+            }
         }
     } catch (e) {
-        if (popup.node()) popup.node().style.transform = `translate3d(${event.pageX + 10}px, ${event.pageY - 10}px, 0)`;
+        if (popup.node()) {
+            try {
+                popup.node().style.setProperty('--popup-left', (event.pageX + 10) + 'px');
+                popup.node().style.setProperty('--popup-top', (event.pageY - 10) + 'px');
+            } catch (err) {
+                popup.node().style.transform = `translate3d(${event.pageX + 10}px, ${event.pageY - 10}px, 0)`;
+            }
+        }
     }
 }
 
@@ -203,11 +233,13 @@ window.addEventListener('scroll', function(){
     if (!popup.classed('open')) return;
     // reuse last mouse event if available
     popupLastEvent = popupLastEvent || { pageX: window.scrollX + 20, pageY: window.scrollY + 20, clientX: 20, clientY: 20 };
+    popupRectCached = null;
     schedulePopupPosition();
 }, { passive: true });
 window.addEventListener('resize', function(){
     if (!popup.classed('open')) return;
     popupLastEvent = popupLastEvent || { pageX: window.scrollX + 20, pageY: window.scrollY + 20, clientX: 20, clientY: 20 };
+    popupRectCached = null;
     schedulePopupPosition();
 }, { passive: true });
 
@@ -288,37 +320,50 @@ function createHotspots(whitelist) {
             .on('mouseover', function(event) {
                 const imgHtml = h.imageUrl ? `<img src="${h.imageUrl}" alt="${h.title}">` : '';
                 popup.select('.popup-content').html(imgHtml + `<strong>${h.title}</strong><br><p>${h.description}</p>`);
-                popup.classed('open', true);
+                // Content changed — invalidate cached measurements so we re-measure once
+                popupRectCached = null;
+                // Position synchronously (scale(.98)) then enable .open in next frame for smooth animation
+                const pt = svgPointToClient(h.x, h.y) || { pageX: h.x, pageY: h.y, clientX: h.x, clientY: h.y };
+                popupLastEvent = pt;
+                popupRectCached = null;
+                try { updatePopupPosition(popupLastEvent); } catch (e) {}
+                requestAnimationFrame(() => requestAnimationFrame(() => popup.classed('open', true)));
                 const img = popup.select('.popup-content').select('img');
                 if (!img.empty()) {
                     img.style('opacity', 0).style('transform', 'translateY(6px)');
                     const node = img.node();
                     if (node && node.complete) {
                         img.style('opacity', 1).style('transform', 'translateY(0)');
-                        // image may change popup height — reposition
-                        popupLastEvent = popupLastEvent || { pageX: h.x, pageY: h.y };
-                        schedulePopupPosition();
+                        popupRectCached = null;
+                        const pt2 = svgPointToClient(h.x, h.y) || pt;
+                        popupLastEvent = pt2;
+                        try { updatePopupPosition(popupLastEvent); } catch (e) {}
+                        requestAnimationFrame(() => requestAnimationFrame(() => popup.classed('open', true)));
                     } else {
-                        img.on('load', function() { d3.select(this).style('opacity', 1).style('transform', 'translateY(0)'); popupLastEvent = popupLastEvent || { pageX: h.x, pageY: h.y }; schedulePopupPosition(); });
+                        img.on('load', function() {
+                            d3.select(this).style('opacity', 1).style('transform', 'translateY(0)');
+                            popupRectCached = null;
+                            const pt3 = svgPointToClient(h.x, h.y) || pt;
+                            popupLastEvent = pt3;
+                            try { updatePopupPosition(popupLastEvent); } catch (e) {}
+                            requestAnimationFrame(() => requestAnimationFrame(() => popup.classed('open', true)));
+                        });
                     }
                 }
             })
             .on('mousemove', function(event) {
                 // Throttle positioning to RAF and use transform for smooth GPU-accelerated moves
                 popupLastEvent = event;
-                try {
-                    if (popup.node()) {
-                        // ensure absolute anchor for transform-based placement
-                        popup.node().style.left = popup.node().style.left || '0px';
-                        popup.node().style.top = popup.node().style.top || '0px';
-                    }
-                } catch (e) {}
+                // invalidate cached rect in case content changed size during interaction
+                popupRectCached = null;
                 schedulePopupPosition();
             })
             .on('mouseout', function() {
                 popup.classed('open', false);
-                // update transform (scale) smoothly via RAF
-                popupLastEvent = popupLastEvent || { pageX: (h.x || 0), pageY: (h.y || 0) };
+                // update transform (scale) smoothly via RAF — use converted SVG coords as fallback
+                const pt = svgPointToClient(h.x || 0, h.y || 0) || { pageX: (h.x || 0), pageY: (h.y || 0), clientX: (h.x || 0), clientY: (h.y || 0) };
+                popupLastEvent = popupLastEvent || pt;
+                popupRectCached = null;
                 schedulePopupPosition();
             });
     });
