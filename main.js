@@ -133,6 +133,12 @@ states
 const popup = d3.select('body').append('div').attr('class', 'popup');
 popup.append('div').attr('class', 'popup-content');
 
+// Track which hotspot is currently active to avoid race conditions
+let activeHotspot = null;
+
+// Ensure popup hides if the user leaves the popup itself
+try { popup.on('mouseleave', function() { popup.classed('open', false); activeHotspot = null; }); } catch(e) {}
+
 // Popup positioning: use transform-based moves with RAF to avoid layout thrash.
 const popupNode = popup.node();
 let popupPending = false;
@@ -323,11 +329,13 @@ function createHotspots(whitelist) {
                 // Content changed — invalidate cached measurements so we re-measure once
                 popupRectCached = null;
                 // Position synchronously (scale(.98)) then enable .open in next frame for smooth animation
+                // mark this hotspot as active so delayed opens can verify intent
+                activeHotspot = h;
                 const pt = svgPointToClient(h.x, h.y) || { pageX: h.x, pageY: h.y, clientX: h.x, clientY: h.y };
                 popupLastEvent = pt;
                 popupRectCached = null;
                 try { updatePopupPosition(popupLastEvent); } catch (e) {}
-                requestAnimationFrame(() => requestAnimationFrame(() => popup.classed('open', true)));
+                requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) popup.classed('open', true); }));
                 const img = popup.select('.popup-content').select('img');
                 if (!img.empty()) {
                     img.style('opacity', 0).style('transform', 'translateY(6px)');
@@ -338,7 +346,7 @@ function createHotspots(whitelist) {
                         const pt2 = svgPointToClient(h.x, h.y) || pt;
                         popupLastEvent = pt2;
                         try { updatePopupPosition(popupLastEvent); } catch (e) {}
-                        requestAnimationFrame(() => requestAnimationFrame(() => popup.classed('open', true)));
+                        requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) popup.classed('open', true); }));
                     } else {
                         img.on('load', function() {
                             d3.select(this).style('opacity', 1).style('transform', 'translateY(0)');
@@ -346,7 +354,7 @@ function createHotspots(whitelist) {
                             const pt3 = svgPointToClient(h.x, h.y) || pt;
                             popupLastEvent = pt3;
                             try { updatePopupPosition(popupLastEvent); } catch (e) {}
-                            requestAnimationFrame(() => requestAnimationFrame(() => popup.classed('open', true)));
+                            requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) popup.classed('open', true); }));
                         });
                     }
                 }
@@ -360,6 +368,7 @@ function createHotspots(whitelist) {
             })
             .on('mouseout', function() {
                 popup.classed('open', false);
+                activeHotspot = null;
                 // update transform (scale) smoothly via RAF — use converted SVG coords as fallback
                 const pt = svgPointToClient(h.x || 0, h.y || 0) || { pageX: (h.x || 0), pageY: (h.y || 0), clientX: (h.x || 0), clientY: (h.y || 0) };
                 popupLastEvent = popupLastEvent || pt;
