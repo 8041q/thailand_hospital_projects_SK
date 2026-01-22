@@ -94,7 +94,11 @@ states
     .on('mouseover', function(event) {
         const name = this.getAttribute('data-name') || this.id;
         const el = d3.select(this);
+        // If this element is currently the active (selected) state, do not let hover mutate its stroke
+        try { if (this.classList && this.classList.contains && this.classList.contains('state--active')) { tooltip.style('opacity',1).html(name); return; } } catch(e) {}
         try { el.raise(); } catch(e) {}
+        // Keep the active-state-layer above states, then keep hotspots on top
+        try { svg.select('#active-state-layer').raise(); } catch(e) {}
         try { svg.select('#hotspots-layer').raise(); } catch(e) {}
         if (!this.hasAttribute('data-prev-stroke')) {
             this.setAttribute('data-prev-stroke', this.getAttribute('stroke') || '');
@@ -127,6 +131,7 @@ states
             if (prevW === '') el.attr('stroke-width', null); else el.attr('stroke-width', prevW);
         }
         el.style('vector-effect', null);
+        try { svg.select('#active-state-layer').raise(); } catch(e) {}
         try { svg.select('#hotspots-layer').raise(); } catch(e) {}
     });
 
@@ -569,7 +574,7 @@ setTimeout(() => { try { adjustHotspots(); } catch(e){} }, 200);
             if (!matches || !matches.length) return;
             sugg.setAttribute('aria-hidden','false');
             const frag = document.createDocumentFragment();
-            matches.slice(0,8).forEach((m, idx) => {
+            matches.slice(0,30).forEach((m, idx) => {
                 const li = document.createElement('li');
                 li.textContent = m.name;
                 li.setAttribute('role','option');
@@ -591,7 +596,25 @@ setTimeout(() => { try { adjustHotspots(); } catch(e){} }, 200);
 
         function clearActive(){
             try {
-                if (activeSearchState) { activeSearchState.classList.remove('state--active'); activeSearchState = null; }
+                if (activeSearchState) {
+                    try {
+                        const prev = activeSearchState.getAttribute('data-prev-stroke');
+                        const prevW = activeSearchState.getAttribute('data-prev-stroke-width');
+                        if (prev !== null) {
+                            if (prev === '') activeSearchState.removeAttribute('stroke'); else activeSearchState.setAttribute('stroke', prev);
+                        }
+                        if (prevW !== null) {
+                            if (prevW === '') activeSearchState.removeAttribute('stroke-width'); else activeSearchState.setAttribute('stroke-width', prevW);
+                        }
+                        activeSearchState.style && (activeSearchState.style.vectorEffect = null);
+                    } catch(e){}
+                    activeSearchState.classList.remove('state--active');
+                    activeSearchState = null;
+                }
+                try {
+                    const actLayer = svg.select('#active-state-layer');
+                    if (!actLayer.empty()) actLayer.selectAll('*').remove();
+                } catch(e) {}
                 try { popup.classed('open', false); } catch(e){}
                 try { tooltip.style('opacity', 0); } catch(e){}
             } catch(e){}
@@ -602,10 +625,49 @@ setTimeout(() => { try { adjustHotspots(); } catch(e){} }, 200);
                 clearActive();
                 const el = document.getElementById(id);
                 if (!el) return;
+                // Save previous stroke attributes so we can restore later
+                try {
+                    if (!el.hasAttribute('data-prev-stroke')) el.setAttribute('data-prev-stroke', el.getAttribute('stroke') || '');
+                    if (!el.hasAttribute('data-prev-stroke-width')) el.setAttribute('data-prev-stroke-width', el.getAttribute('stroke-width') || '');
+                } catch(e){}
+                // Hide original stroke so the cloned active-layer stroke is visible
+                try { el.setAttribute('stroke', 'none'); el.setAttribute('stroke-width', '0'); el.style && (el.style.vectorEffect = null); } catch(e){}
                 el.classList.add('state--active');
                 activeSearchState = el;
-                try { d3.select(el).raise(); } catch(e){}
-                // Intentionally do not open popups or show tooltips on selection.
+                try {
+                    // Ensure an active-state layer exists and is placed immediately before hotspots
+                    let actLayer = svg.select('#active-state-layer');
+                    if (actLayer.empty()) {
+                        if (svg.select('#hotspots-layer').empty()) actLayer = svg.append('g').attr('id','active-state-layer');
+                        else actLayer = svg.insert('g', '#hotspots-layer').attr('id','active-state-layer');
+                    }
+                    // Clear previous highlight clone
+                    actLayer.selectAll('*').remove();
+
+                    // Clone the selected element into the active layer and style the clone as stroke-only
+                    const clone = el.cloneNode(true);
+                    try { clone.removeAttribute && clone.removeAttribute('id'); } catch(e){}
+                    // Recursively style cloned shape nodes
+                    (function styleNode(n){
+                        try {
+                            const tag = (n.tagName || '').toLowerCase();
+                            if (['path','polygon','polyline','rect','circle','ellipse','line'].includes(tag)) {
+                                n.setAttribute('fill', 'none');
+                                const accent = (getComputedStyle(document.documentElement).getPropertyValue('--popup-accent') || '#0a84ff').trim() || '#0a84ff';
+                                n.setAttribute('stroke', accent);
+                                n.setAttribute('stroke-width', '2');
+                                n.setAttribute('vector-effect', 'non-scaling-stroke');
+                                n.setAttribute('pointer-events', 'none');
+                                try { n.style.filter = 'drop-shadow(0 8px 16px rgba(10,132,255,0.12))'; } catch(e){}
+                            }
+                        } catch(e){}
+                        try { const ch = n.children || []; for (let i=0;i<ch.length;i++) styleNode(ch[i]); } catch(e){}
+                    })(clone);
+
+                    // Append clone to the active layer
+                    const node = actLayer.node();
+                    if (node) node.appendChild(clone);
+                } catch(e) { console.error('active-layer', e); }
             } catch(e) { console.error('activateState', e); }
         }
 

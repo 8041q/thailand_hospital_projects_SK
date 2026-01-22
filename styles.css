@@ -7,7 +7,7 @@
     --popup-bg: #ffffff;
     --popup-padding: 12px;
     --popup-radius: 6px;
-    --popup-accent: #0a84ff;
+    --popup-accent: #000000;
     --popup-max-width: clamp(220px, 28vw, 520px);
 }
 
@@ -23,7 +23,7 @@ svg {
     border-radius: 8px;
 }
 #map-controls { position: fixed; left: 10px; top: 10px; background: rgba(255,255,255,0.95); border:1px solid #ccc; padding:8px; z-index:9999; font-size:13px; }
-.state { fill: #B9E8E4; stroke: #fff; stroke-width: 0.5; }
+.state:not(.state--active) { fill: #B9E8E4; stroke: #fff; stroke-width: 0.5; }
 .state:hover { stroke: #000 !important; stroke-width: 1.2px !important; vector-effect: non-scaling-stroke;}
 .hotspot {
     cursor: pointer;
@@ -170,7 +170,6 @@ svg {
     color: rgb(51, 51, 51);
     margin: 0px;
     padding-top: 0rem;
-    padding-bottom: 1rem;
 }
 .map-area {
     display: flex;
@@ -232,8 +231,7 @@ svg {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
-    right: 0;
-    width: auto;
+    width: 320px;
     box-sizing: border-box;
     margin: 0;
     background: #fff;
@@ -243,23 +241,31 @@ svg {
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     border: 1px solid rgba(0,0,0,0.06);
     z-index: 10001;
-    max-width: 40vw;
-    min-width: 200px;
+    min-width: 320px;
+    max-width: 320px;
+    max-height: 280px;
     display: none;
     overflow: auto;
 }
 .map-search-suggestions[aria-hidden="false"] { display: block; }
 .map-search-suggestions li { padding: 8px 12px; cursor: pointer; font-size: 13px; }
-.map-search-suggestions li.selected, .map-search-suggestions li:hover { background: rgba(10,132,255,0.08); }
+.map-search-suggestions li.selected, .map-search-suggestions li:hover { background: rgba(0, 0, 0, 0.08); }
 
 /* Active state highlight applied by search */
 .state.state--active {
-    stroke: var(--popup-accent, #0a84ff) !important;
-    stroke-width: 2px !important;
-    filter: drop-shadow(0 8px 16px rgba(10,132,255,0.12));
+    /* Active states: explicit dark outline, non-scaling stroke */
+    stroke: var(--popup-accent, #000000) !important;
+    stroke-width: 1px !important;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
     opacity: 1 !important;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.12));
 }
-
+.state.state--active:hover {
+    /* Keep active stroke stable on hover */
+    stroke: var(--popup-accent, #000000) !important;
+    stroke-width: 1px !important;
+}
 @media (max-width: 520px) {
     .map-card { padding: 10px; width: calc(100% - 20px); }
     .map-card h1 { font-size: 20px; margin: 6px 0 10px; }
