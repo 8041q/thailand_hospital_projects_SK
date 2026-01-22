@@ -548,3 +548,87 @@ setTimeout(() => { try { adjustHotspots(); } catch(e){} }, 200);
     });
     setCursorDragging(false);
 })();
+
+// Search UI: wire a small search that highlights a state when selected
+(function(){
+    try {
+        const input = document.getElementById('map-search');
+        const sugg = document.getElementById('map-search-suggestions');
+        if (!input || !sugg || !states) return;
+
+        const nodes = Array.from(states.nodes()).filter(n => n && n.id);
+        const items = nodes.map(n => ({ id: n.id, name: (n.getAttribute('data-name') || n.getAttribute('title') || n.id || '').trim() }));
+        let highlighted = -1;
+        let currentMatches = [];
+        let activeSearchState = null;
+
+        function clearSuggestions(){ sugg.innerHTML = ''; sugg.setAttribute('aria-hidden','true'); highlighted = -1; currentMatches = []; }
+
+        function render(matches){
+            clearSuggestions();
+            if (!matches || !matches.length) return;
+            sugg.setAttribute('aria-hidden','false');
+            const frag = document.createDocumentFragment();
+            matches.slice(0,8).forEach((m, idx) => {
+                const li = document.createElement('li');
+                li.textContent = m.name;
+                li.setAttribute('role','option');
+                li.dataset.id = m.id;
+                li.className = 'map-search-suggestion';
+                li.addEventListener('click', function(){ activateState(m.id); input.value = m.name; clearSuggestions(); });
+                frag.appendChild(li);
+            });
+            sugg.appendChild(frag);
+        }
+
+        function search(q){
+            const s = (q||'').trim().toLowerCase();
+            if (!s) { clearSuggestions(); clearActive(); return; }
+            const matches = items.filter(it => it.name.toLowerCase().includes(s)).sort((a,b)=> a.name.localeCompare(b.name));
+            currentMatches = matches;
+            render(matches);
+        }
+
+        function clearActive(){
+            try {
+                if (activeSearchState) { activeSearchState.classList.remove('state--active'); activeSearchState = null; }
+                try { popup.classed('open', false); } catch(e){}
+                try { tooltip.style('opacity', 0); } catch(e){}
+            } catch(e){}
+        }
+
+        function activateState(id){
+            try {
+                clearActive();
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.add('state--active');
+                activeSearchState = el;
+                try { d3.select(el).raise(); } catch(e){}
+                // Intentionally do not open popups or show tooltips on selection.
+            } catch(e) { console.error('activateState', e); }
+        }
+
+        input.addEventListener('input', function(){ search(this.value); });
+        input.addEventListener('keydown', function(e){
+            const itemsEls = sugg ? Array.from(sugg.children) : [];
+            if (e.key === 'ArrowDown'){
+                if (!itemsEls.length) return;
+                e.preventDefault(); highlighted = Math.min(itemsEls.length-1, highlighted+1);
+                itemsEls.forEach((li,i)=> li.classList.toggle('selected', i===highlighted));
+            } else if (e.key === 'ArrowUp'){
+                if (!itemsEls.length) return;
+                e.preventDefault(); highlighted = Math.max(0, highlighted-1);
+                itemsEls.forEach((li,i)=> li.classList.toggle('selected', i===highlighted));
+            } else if (e.key === 'Enter'){
+                if (itemsEls.length){ e.preventDefault(); const idx = highlighted>=0?highlighted:0; const sel = itemsEls[idx]; if (sel){ activateState(sel.dataset.id); input.value = sel.textContent; clearSuggestions(); } }
+            } else if (e.key === 'Escape'){
+                input.value = ''; clearSuggestions(); clearActive();
+            }
+        }, false);
+
+        // click outside closes suggestions
+        document.addEventListener('click', function(ev){ if (!ev.target) return; if (ev.target === input || ev.target.closest && ev.target.closest('.map-search')) return; clearSuggestions(); }, { capture: true });
+
+    } catch (e) { console.error('map-search:init', e); }
+})();
