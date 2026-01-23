@@ -267,12 +267,13 @@ svg {
     stroke-width: 1px !important;
 }
 @media (max-width: 520px) {
-    .map-card { padding: 10px; width: calc(100% - 20px); max-width: 100%; }
+    .map-card { padding: 10px; width: calc(100% - 20px) !important; max-width: 100% !important; min-width: 0 !important; }
     .map-card h1 { font-size: 20px; margin: 6px 0 10px; }
 }
 @media (max-width: 720px) {
     .map-meta { grid-template-columns: 1fr; gap: 8px; }
     .map-meta img { max-width: 160px; margin: 0; }
+    .map-card { padding: 10px; width: calc(100% - 25px) !important; max-width: 80% !important; min-width: 0 !important; }
     .map-card h1 { text-align: left; }
 }
 
