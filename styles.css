@@ -86,6 +86,7 @@ svg {
     will-change: transform, opacity;
     transform-origin: 50% 0;
     backface-visibility: hidden;
+    touch-action: manipulation;
 }
 .popup--large { max-width: clamp(360px, 40vw, 760px); }
 
@@ -102,7 +103,7 @@ svg {
         box-shadow: 0 12px 36px rgba(0,0,0,0.14);
     }
     .popup::after { display: none; }
-    .popup img { max-height: 180px; }
+    .popup img { max-height: 160px; width: auto; max-width: calc(100% - 48px); margin: 0 auto 8px; display: block; }
 }
 .popup strong { font-weight: 600; font-size: 1.05em; color: #111; }
 .popup p { margin: 0.35em 0 0; }
@@ -154,9 +155,13 @@ svg {
     }
 }
 
-.map-interaction-active .popup,
 .map-interaction-active #map-controls {
     pointer-events: none !important;
+}
+
+.popup:focus {
+    outline: none;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.12), 0 0 0 4px rgba(10,132,255,0.10);
 }
 .map-card h1 {
     font-family: inherit;
@@ -272,7 +277,7 @@ svg {
 }
 @media (max-width: 720px) {
     .map-meta { grid-template-columns: 1fr; gap: 8px; }
-    .map-meta img { max-width: 160px; margin: 0; }
+    .map-meta img { max-width: 100px; margin: 0; }
     .map-card { padding: 10px; width: calc(100% - 25px) !important; max-width: 80% !important; min-width: 0 !important; }
     .map-card h1 { text-align: left; }
 }

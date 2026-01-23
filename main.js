@@ -135,14 +135,32 @@ states
         try { svg.select('#hotspots-layer').raise(); } catch(e) {}
     });
 
-const popup = d3.select('body').append('div').attr('class', 'popup');
+const popup = d3.select('body')
+    .append('div')
+    .attr('class', 'popup')
+    .attr('role', 'dialog')
+    .attr('aria-hidden', 'true')
+    .attr('tabindex', '-1');
 popup.append('div').attr('class', 'popup-content');
+
+// Allow keyboard closing (Esc) when popup has focus
+try {
+    popup.on('keydown', function(event) {
+        try {
+            if (event.key === 'Escape' || event.key === 'Esc') {
+                popup.classed('open', false);
+                popup.attr('aria-hidden', 'true');
+                activeHotspot = null;
+            }
+        } catch (e) {}
+    });
+} catch (e) {}
 
 // Track which hotspot is currently active to avoid race conditions
 let activeHotspot = null;
 
 // Ensure popup hides if the user leaves the popup itself
-try { popup.on('mouseleave', function() { popup.classed('open', false); activeHotspot = null; }); } catch(e) {}
+try { popup.on('mouseleave', function() { popup.classed('open', false); popup.attr('aria-hidden', 'true'); activeHotspot = null; }); } catch(e) {}
 
 // Popup positioning: use transform-based moves with RAF to avoid layout thrash.
 const popupNode = popup.node();
@@ -340,26 +358,26 @@ function createHotspots(whitelist) {
                 popupLastEvent = pt;
                 popupRectCached = null;
                 try { updatePopupPosition(popupLastEvent); } catch (e) {}
-                requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) popup.classed('open', true); }));
+                requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) { popup.classed('open', true); try { popup.attr('aria-hidden', 'false'); } catch(e){} } }));
                 const img = popup.select('.popup-content').select('img');
                 if (!img.empty()) {
                     img.style('opacity', 0).style('transform', 'translateY(6px)');
                     const node = img.node();
-                    if (node && node.complete) {
-                        img.style('opacity', 1).style('transform', 'translateY(0)');
-                        popupRectCached = null;
-                        const pt2 = svgPointToClient(h.x, h.y) || pt;
-                        popupLastEvent = pt2;
-                        try { updatePopupPosition(popupLastEvent); } catch (e) {}
-                        requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) popup.classed('open', true); }));
-                    } else {
+                        if (node && node.complete) {
+                            img.style('opacity', 1).style('transform', 'translateY(0)');
+                            popupRectCached = null;
+                            const pt2 = svgPointToClient(h.x, h.y) || pt;
+                            popupLastEvent = pt2;
+                            try { updatePopupPosition(popupLastEvent); } catch (e) {}
+                            requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) { popup.classed('open', true); try { popup.attr('aria-hidden','false'); } catch(e){} } }));
+                        } else {
                         img.on('load', function() {
                             d3.select(this).style('opacity', 1).style('transform', 'translateY(0)');
                             popupRectCached = null;
                             const pt3 = svgPointToClient(h.x, h.y) || pt;
                             popupLastEvent = pt3;
                             try { updatePopupPosition(popupLastEvent); } catch (e) {}
-                            requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) popup.classed('open', true); }));
+                            requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) { popup.classed('open', true); try { popup.attr('aria-hidden','false'); } catch(e){} } }));
                         });
                     }
                 }
@@ -371,8 +389,52 @@ function createHotspots(whitelist) {
                 popupRectCached = null;
                 schedulePopupPosition();
             })
+            .on('pointerdown', function(event) {
+                try {
+                    // Prevent map panning on touch tap; consume the event so it doesn't fall through
+                    if (event && event.preventDefault) event.preventDefault();
+                    if (event && event.stopPropagation) event.stopPropagation();
+                } catch (e) {}
+                // Populate popup content and open immediately for taps
+                try {
+                    const imgHtml = h.imageUrl ? `<img src="${h.imageUrl}" alt="${h.title}">` : '';
+                    popup.select('.popup-content').html(imgHtml + `<strong>${h.title}</strong><br><p>${h.description}</p>`);
+                    // Ensure image animates in (same logic as mouseover flow)
+                    popupRectCached = null;
+                    activeHotspot = h;
+                    const pt = svgPointToClient(h.x, h.y) || { pageX: h.x, pageY: h.y, clientX: h.x, clientY: h.y };
+                    popupLastEvent = pt;
+                    try { updatePopupPosition(popupLastEvent); } catch (e) {}
+                    const img = popup.select('.popup-content').select('img');
+                    if (!img.empty()) {
+                        img.style('opacity', 0).style('transform', 'translateY(6px)');
+                        const node = img.node();
+                        if (node && node.complete) {
+                            img.style('opacity', 1).style('transform', 'translateY(0)');
+                            popupRectCached = null;
+                            const pt2 = svgPointToClient(h.x, h.y) || pt;
+                            popupLastEvent = pt2;
+                            try { updatePopupPosition(popupLastEvent); } catch (e) {}
+                            requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) { popup.classed('open', true); try { popup.attr('aria-hidden','false'); if (popup.node() && popup.node().focus) popup.node().focus(); } catch(e){} } }));
+                        } else {
+                            img.on('load', function() {
+                                d3.select(this).style('opacity', 1).style('transform', 'translateY(0)');
+                                popupRectCached = null;
+                                const pt3 = svgPointToClient(h.x, h.y) || pt;
+                                popupLastEvent = pt3;
+                                try { updatePopupPosition(popupLastEvent); } catch (e) {}
+                                requestAnimationFrame(() => requestAnimationFrame(() => { if (activeHotspot === h) { popup.classed('open', true); try { popup.attr('aria-hidden','false'); if (popup.node() && popup.node().focus) popup.node().focus(); } catch(e){} } }));
+                            });
+                        }
+                    } else {
+                        // No image — just open and focus
+                        requestAnimationFrame(() => { if (activeHotspot === h) { popup.classed('open', true); try { popup.attr('aria-hidden','false'); if (popup.node() && popup.node().focus) popup.node().focus(); } catch(e){} } });
+                    }
+                } catch (e) {}
+            })
             .on('mouseout', function() {
                 popup.classed('open', false);
+                try { popup.attr('aria-hidden', 'true'); } catch(e){}
                 activeHotspot = null;
                 // update transform (scale) smoothly via RAF — use converted SVG coords as fallback
                 const pt = svgPointToClient(h.x || 0, h.y || 0) || { pageX: (h.x || 0), pageY: (h.y || 0), clientX: (h.x || 0), clientY: (h.y || 0) };
@@ -521,7 +583,13 @@ setTimeout(() => { try { adjustHotspots(); } catch(e){} }, 200);
     }
     function setCursorDragging(dragging){ try { svgEl.style.cursor = dragging ? 'grabbing' : 'grab'; } catch(e){} }
     svgEl.addEventListener('mousedown', function(e){
+        // Ignore non-left buttons or modifier keys
         if (e.button !== 0 || e.ctrlKey) return;
+        try {
+            const t = e.target || e.srcElement;
+            // If interaction started inside a hotspot, popup, or search UI, don't start panning
+            if (t && t.closest && (t.closest('.hotspot') || t.closest('.popup') || t.closest('.map-search'))) return;
+        } catch (err) {}
         e.preventDefault();
         isPanning = true;
         startClient = { x: e.clientX, y: e.clientY };
@@ -615,7 +683,7 @@ setTimeout(() => { try { adjustHotspots(); } catch(e){} }, 200);
                     const actLayer = svg.select('#active-state-layer');
                     if (!actLayer.empty()) actLayer.selectAll('*').remove();
                 } catch(e) {}
-                try { popup.classed('open', false); } catch(e){}
+                try { popup.classed('open', false); popup.attr('aria-hidden', 'true'); } catch(e){}
                 try { tooltip.style('opacity', 0); } catch(e){}
             } catch(e){}
         }
