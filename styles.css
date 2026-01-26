@@ -11,7 +11,7 @@
     --popup-max-width: clamp(220px, 28vw, 520px);
 }
 
-body { font-family: var(--ui-font); margin: 20px; background: #fbfbfb; color: #222; }
+body { font-family: var(--ui-font); background: #fbfbfb; color: #222; }
 svg {
     width: 100%;
     height: auto;
@@ -131,13 +131,6 @@ svg {
     transition: opacity 160ms ease, transform 160ms ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .popup, .popup img, .tooltip {
-        transition: none !important;
-        animation: none !important;
-    }
-}
-
 .map-interaction-active .popup,
 .map-interaction-active #map-controls {
     pointer-events: none !important;
@@ -249,6 +242,13 @@ svg {
     stroke-width: 1px !important;
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .popup, .popup img, .tooltip {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
 @media (max-width: 1190px) {
     .map-card { padding: 10px; width: calc(100% - 20px); max-width: 80%;}
     .map-card h1 { text-align: left; font-size: 25px; margin: 6px 0 10px; }
@@ -277,7 +277,6 @@ svg {
         box-shadow: 0 12px 36px rgba(0,0,0,0.14);
     }
     .popup::after { display: none; }
-    .popup img { max-height: 180px; }
 }
 
 /* map wrapper: ensure the map area stretches to fill card */
