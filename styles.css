@@ -88,22 +88,6 @@ svg {
     backface-visibility: hidden;
 }
 .popup--large { max-width: clamp(360px, 40vw, 760px); }
-
-@media (max-width: 520px) {
-    .popup {
-        position: fixed;
-        left: 12px !important;
-        right: 12px !important;
-        top: auto !important;
-        bottom: 12px !important;
-        transform: translateY(0) scale(1);
-        max-width: calc(100% - 24px);
-        border-radius: 10px;
-        box-shadow: 0 12px 36px rgba(0,0,0,0.14);
-    }
-    .popup::after { display: none; }
-    .popup img { max-height: 180px; }
-}
 .popup strong { font-weight: 600; font-size: 1.05em; color: #111; }
 .popup p { margin: 0.35em 0 0; }
 .popup img {
@@ -173,11 +157,12 @@ svg {
 }
 .map-area {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
     width: 100%;
     box-sizing: border-box;
     min-height: 0;
+    gap: 20px;
 }
 
 .map-card {
@@ -193,7 +178,7 @@ svg {
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
-    gap: 12px;
+    gap: 20px;
     min-height: 0;
 }
 
@@ -204,11 +189,8 @@ svg {
     align-items: center;
 }
 .map-meta img {
-    max-width: 200px;
+    max-width: 100%;     /* Prevents image from overflowing on mobile */
     height: auto;
-    display: block;
-    object-fit: contain;
-    border-radius: 6px;
 }
 
 /* Search UI above the map */
@@ -266,20 +248,36 @@ svg {
     stroke: var(--popup-accent, #000000) !important;
     stroke-width: 1px !important;
 }
+
+@media (max-width: 1190px) {
+    .map-card { padding: 10px; width: calc(100% - 20px); max-width: 80%;}
+    .map-card h1 { text-align: left; font-size: 25px; margin: 6px 0 10px; }
+}
+
+@media (max-width: 790px) {
+    .map-card { padding: 10px; width: calc(100% - 20px); max-width: 90%; }
+    .map-meta { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 8px; }
+    /*.map-meta img { display: none !important;} //To hide img completely*/
+}
+
 @media (max-width: 520px) {
     .map-card { padding: 10px; width: calc(100% - 20px); max-width: 100%; }
-    .map-meta img { max-width: 160px; margin: 0; }
-    .map-card h1 { font-size: 20px; margin: 6px 0 10px; }
-}
-@media (max-width: 720px) {
-    .map-card { padding: 10px; width: calc(100% - 20px); max-width: 100%; }
-    .map-meta img { max-width: 160px; margin: 0; }
-    .map-card h1 { text-align: left; }
-}
-@media (max-width: 1190px) {
-    .map-card { padding: 10px; width: calc(100% - 20px); max-width: 80%; }
-    .map-meta img { max-width: 160px; margin: 0; }
-    .map-card h1 { text-align: left; }
+    .map-meta img { width: 150px; margin: 0; }
+    .map-card h1 { font-size: 20px;}
+
+    .popup {
+        position: fixed;
+        left: 12px !important;
+        right: 12px !important;
+        top: auto !important;
+        bottom: 12px !important;
+        transform: translateY(0) scale(1);
+        max-width: calc(100% - 24px);
+        border-radius: 10px;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.14);
+    }
+    .popup::after { display: none; }
+    .popup img { max-height: 180px; }
 }
 
 /* map wrapper: ensure the map area stretches to fill card */
