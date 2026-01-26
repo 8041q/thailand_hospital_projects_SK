@@ -270,7 +270,7 @@ svg {
         left: 12px !important;
         right: 12px !important;
         top: auto !important;
-        bottom: 12px !important;
+        bottom: 5% !important;
         transform: translateY(0) scale(1);
         max-width: calc(100% - 24px);
         border-radius: 10px;
