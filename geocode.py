@@ -7,7 +7,7 @@ HEADERS = {
     "User-Agent": "map-select-geocoder/1.0 (contact: gui@toruscare.com)"
 }
 
-# ViewBox/map transform constants for lat/lon <-> SVG x/y conversion
+# ViewBox constants used to convert between lat/lon and SVG x/y coordinates
 minLon = 97.344728
 maxLat = 20.463430
 maxLon = 105.640023
@@ -17,7 +17,7 @@ vbH = 1024.7631
 lonSpan = maxLon - minLon
 latSpan = maxLat - minLat
 
-# Address groups: (label, [candidate queries])
+# Address groups: (display label, list of candidate query strings)
 address_groups = [
     ("Kumphawapi Hospital (Udon Thani)", [
         "Kumphawapi Hospital, Kumphawapi, Udon Thani, Thailand",
@@ -74,7 +74,7 @@ def latlon_to_xy(lat, lon):
 
 
 def append_to_compute(coords, path="coordinates.txt"):
-    # Append found coordinates to a simple CSV-like file: lat,lon,label
+    # Append found coordinates to a simple CSV file (lat,lon,label)
     created = not os.path.exists(path)
     with open(path, "a", encoding="utf-8") as f:
         if created:

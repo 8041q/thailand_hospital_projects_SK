@@ -257,7 +257,8 @@ svg {
 @media (max-width: 790px) {
     .map-card { padding: 10px; width: calc(100% - 20px); max-width: 90%; }
     .map-meta { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 8px; }
-    /*.map-meta img { display: none !important;} //To hide img completely*/
+    /* Uncomment to hide the .map-meta image on small screens:
+    .map-meta img { display: none !important; } */
 }
 
 @media (max-width: 520px) {

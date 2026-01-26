@@ -1,25 +1,29 @@
 
+
 # Thailand Interactive Map
 
-## Overview
-This project is a barebones interactive map of Thailand for visualizing and exploring hospital project locations. It features a responsive SVG map, interactive hotspots, and smooth zoom/pan controls. The codebase is modular, with HTML, JavaScript, and CSS separated for clarity and maintainability.
+Welcome! This project is a simple, interactive map of Thailand designed to help you explore and visualize hospital project locations. It’s lightweight, easy to use, and everything runs right in your browser—no backend or complicated setup required.
 
-## Features
-- **Responsive SVG Map**: The map (inline SVG in `index.html`) scales to fit any screen size, maintaining clarity on desktop and mobile.
-- **Interactive Hotspots**: Clickable points represent hospital projects. Hover or click a hotspot to see a popup with details and an image.
-- **Zoom & Pan**: Hold Ctrl (or Cmd on Mac) and use the mouse wheel to zoom in/out, centered on the pointer. Drag to pan the map when zoomed in.
-- **Customizable Hotspots**: Add or edit hotspots by modifying the `hotspots` array in `main.js`. Each hotspot has coordinates, a label, description, and image.
-- **Modern UI**: Styled with a pale blue color scheme, subtle shadows, and a card-based layout (`styles.css`).
-- **No External Dependencies**: Only D3.js is loaded from CDN. All map data and logic are in the project files.
+---
 
-## File Structure
-- `index.html`: Main HTML file. Contains the inline SVG map and loads the CSS/JS.
-- `main.js`: All map logic, interactivity, and the `hotspots` array. Handles SVG coloring, popup logic, zoom/pan, and search.
-- `styles.css`: All styles for the map, popups, tooltips, and layout.
-- `rsc/`: Resource folder for images (e.g., hospital photos, logo).
-- `geocode.py`: Optional Python script for geocoding addresses to coordinates.
+## What’s Inside?
 
-## Usage
+- **Responsive SVG Map:** The map (inline SVG in `index.html`) looks sharp on any device, from desktop to mobile.
+- **Interactive Hotspots:** Clickable points show hospital projects. Hover or click to see a popup with details and a photo.
+- **Zoom & Pan:** Hold Ctrl (or Cmd on Mac) and scroll to zoom in/out, centered on your mouse. Drag to pan when zoomed in.
+- **Customizable Hotspots:** Add or edit hotspots easily in `main.js`. Each one has coordinates, a label, description, and image.
+- **Modern Look:** Clean, pale blue color scheme with subtle shadows and a card-style layout (see `styles.css`).
+- **No Heavy Dependencies:** Only D3.js is loaded from CDN. All map data and logic are in the project files.
+
+## Project Structure
+
+- `index.html` — Main HTML file. Contains the SVG map and loads CSS/JS.
+- `main.js` — Handles all map logic, interactivity, and the `hotspots` array.
+- `styles.css` — All the styles for the map, popups, tooltips, and layout.
+- `rsc/` — Images and resources (hospital photos, logo, etc).
+- `geocode.py` — (Optional) Python script for geocoding addresses.
+
+## Getting Started
 
 ### Run Locally
 1. Make sure you have Python installed.
@@ -28,39 +32,41 @@ This project is a barebones interactive map of Thailand for visualizing and expl
 3. Open your browser and go to: [http://localhost:8000/index.html](http://localhost:8000/index.html)
 
 ### Explore the Map
-- Click hotspots for more information and images.
+- Click on hotspots to see more info and images.
 - Zoom and pan using Ctrl+Wheel and drag.
 
 ### Add or Edit Hotspots
-1. Open `main.js` and find the `hotspots` array (near the top).
+1. Open `main.js` and look for the `hotspots` array near the top.
 2. Each hotspot is an object with:
    - `provinceId`: SVG province ID (e.g., `TH-41`)
    - `title`: Name of the hospital/project
    - `description`: Short description
-   - `x`, `y`: SVG coordinates (match the map's viewBox)
+   - `x`, `y`: SVG coordinates (match the map’s viewBox)
    - `imageUrl`: Path to an image (relative to `rsc/`)
-3. Add, remove, or edit entries as needed. Save and refresh the browser to see changes.
+3. Add, remove, or edit entries as you like. Save and refresh your browser to see changes.
 
-### Extend the Map
-- Add more SVG paths to the map in `index.html` for new provinces or regions.
-- Enhance the JavaScript for dynamic data, filtering, or API integration.
+### Want to Extend the Map?
+- Add more SVG paths in `index.html` for new provinces or regions.
+- Enhance the JavaScript for dynamic data, filtering, or API integration. (To be Implemented)
 
-## Advanced Features
-- **Popup Smart Positioning**: Popups reposition to stay visible on screen.
-- **Pointer-Centered Zoom**: Zooming is centered on the mouse pointer for intuitive navigation.
-- **Responsive Hotspot Scaling**: Hotspot sizes and borders scale with the map and zoom level.
-- **Keyboard/Touch Friendly**: Hotspots and map controls work with mouse and touch input.
-- **Search**: Search for provinces or hospitals using the search box above the map.
+## Cool Features
+
+- **Smart Popups:** Popups always try to stay visible on screen.
+- **Pointer-Centered Zoom:** Zooming is centered on your mouse pointer for a natural feel.
+- **Hotspot Scaling:** Hotspot sizes and borders scale with the map and zoom level.
+- **Keyboard & Touch Friendly:** Works with mouse and touch input.
+- **Search:** Quickly find provinces or hospitals using the search box above the map.
 
 ## Limitations
-- This is a **barebones version**: no backend, persistent data storage, or analytics.
-- Only a subset of provinces and hotspots are included by default. Expand by adding more SVG paths or hotspot entries.
+
+- This is a **barebones demo**: there’s no backend, persistent data, or analytics.
+- Only a few provinces and hotspots are included by default. You can add more by editing the SVG or the `hotspots` array.
 
 ---
 
 ## geocode.py (Helper Script)
 
-`geocode.py` is a simple Python script to geocode hospital addresses using OpenStreetMap's Nominatim API. It converts addresses to latitude/longitude and can append results to a local file for use in the map.
+Want to convert hospital addresses to coordinates? `geocode.py` is a simple Python script that uses OpenStreetMap’s Nominatim API to geocode addresses. It writes results to a local file for use in the map.
 
-- **Usage**: Run `python geocode.py` to geocode predefined address groups. Use `--append` to append results to a local file (default: `coordinates.txt`). Change the output file with `--out <path>`.
-- **Note**: This script is optional. By default, it writes simple CSV lines (`lat,lon,label`) to the output file. Edit `geocode.py` if you need a different format.
+- **How to use:** Run `python geocode.py` to geocode the built-in address list. Use `--append` to add results to a file (default: `coordinates.txt`). Change the output file with `--out <path>`.
+- **Note:** This script is optional. By default, it writes simple CSV lines (`lat,lon,label`). Edit `geocode.py` if you want a different format.

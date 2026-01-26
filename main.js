@@ -1,27 +1,27 @@
 // Extracted from inline script in index.html
 // Runtime probe removed
-// Global error handlers — log errors to the console
+// Log errors and unhandled promise rejections to the console
 window.addEventListener('error', function(ev){ try{ console.error('map:error', ev.message || ev.error || ev); }catch(e){} });
 window.addEventListener('unhandledrejection', function(ev){ try{ console.error('map:unhandledrejection', ev.reason || ev); }catch(e){} });
-// Use inline SVG (avoids XHR/file:// restrictions)
+// Use inline SVG to avoid browser restrictions with file loading
 const svg = d3.select('#map').select('svg');
 
-// Let CSS and the viewBox control SVG sizing (responsive)
+// SVG sizing is handled by CSS and viewBox for responsiveness
 
-// Tooltip for states
+// Tooltip element for showing state names on hover
 const tooltip = d3.select('body').append('div').attr('class', 'tooltip');
 
-// Select state shapes (paths, polygons, groups) and compute fills.
+// Select all state shapes and set up their fill colors
 const states = svg.selectAll('path, polygon, g[id]');
-// Single-hue shading (HSL) computed per state.
+// Use HSL color shading for each state
 const stateCount = states.size();
-// base color derived from #B9E8E4 (approx HSL)
+// Base color is similar to #B9E8E4 in HSL
 const baseHue = 175;
 const sat = '50%';
-// Widen lightness range to increase contrast between adjacent states
+// Increase lightness range for better contrast between states
 const minLight = 75; // Conservative: darker darkest areas
 const maxLight = 85; // Conservative: slightly lighter highlights
-// Helper: deterministic per-state jitter (hue deg, sat %, light %)
+// Helper function: adds a bit of color variation for each state
 function computeJitter(i){
     const hueJ = ((i * 97) % 21) - 10;
     const satJ = ((i * 67) % 11) - 5;
@@ -138,13 +138,13 @@ states
 const popup = d3.select('body').append('div').attr('class', 'popup');
 popup.append('div').attr('class', 'popup-content');
 
-// Track which hotspot is currently active to avoid race conditions
+// Keep track of the currently active hotspot
 let activeHotspot = null;
 
-// Ensure popup hides if the user leaves the popup itself
+// Hide popup when mouse leaves the popup area
 try { popup.on('mouseleave', function() { popup.classed('open', false); activeHotspot = null; }); } catch(e) {}
 
-// Popup positioning: use transform-based moves with RAF to avoid layout thrash.
+// Use transform and requestAnimationFrame for smooth popup positioning
 const popupNode = popup.node();
 let popupPending = false;
 let popupLastEvent = null;
@@ -239,7 +239,7 @@ function updatePopupPosition(event) {
     }
 }
 
-// Keep popup positioned while scrolling/resizing (helps when near bottom edge)
+// Reposition popup when scrolling or resizing the window
 window.addEventListener('scroll', function(){
     if (!popup.classed('open')) return;
     // reuse last mouse event if available
@@ -554,7 +554,7 @@ setTimeout(() => { try { adjustHotspots(); } catch(e){} }, 200);
     setCursorDragging(false);
 })();
 
-// Search UI: wire a small search that highlights a state when selected
+// Search UI: highlight a state when selected from the search box
 (function(){
     try {
         const input = document.getElementById('map-search');
