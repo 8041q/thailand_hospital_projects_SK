@@ -356,7 +356,10 @@ svg {
 }
 
 /* map wrapper */
-#map { grid-column: 1; grid-row: 2; min-height: 320px; display: flex; align-items: center; justify-content: center; height: 100%; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;}
+/* Allow the page to continue scrolling when the map cannot scroll itself.
+    Avoid trapping wheel gestures inside the map element (prevents scroll chaining).
+*/
+#map { grid-column: 1; grid-row: 2; min-height: 320px; display: flex; align-items: center; justify-content: center; height: auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior: auto;}
 
 #map svg { display: block; max-width: 100%; height: auto; pointer-events: auto;}
 

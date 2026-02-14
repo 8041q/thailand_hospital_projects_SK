@@ -34,7 +34,6 @@ function showLanding() {
     if (!landing) return;
     landing.style.display = '';
 
-    // Build card grid from MAP_CATALOG
     landing.innerHTML = '';
     const heading = document.createElement('h1');
     heading.className = 'landing-heading';
@@ -52,7 +51,6 @@ function showLanding() {
 
         const thumb = document.createElement('div');
         thumb.className = 'landing-card-thumb';
-        // Use an <img> only inside the card — loaded on demand when the landing is shown
         const img = document.createElement('img');
         img.src = entry.thumbnail || entry.svgUrl;
         img.alt = entry.title;
@@ -686,7 +684,6 @@ function initZoom(svg, signal) {
 
             const EPS = 1e-4;
             if (Math.abs(candidate[2] - vb[2]) < EPS && Math.abs(candidate[3] - vb[3]) < EPS) {
-                // Width/height unchanged after clamping — nothing to do
                 return;
             }
 
@@ -700,7 +697,6 @@ function initZoom(svg, signal) {
     }
 
     // Window-level capture listener to intercept wheel events over the SVG.
-    // Ctrl/Cmd+Wheel -> custom viewBox zoom; diagonal/horizontal wheel -> prevent sideways scroll.
     window.addEventListener('wheel', function (e) {
         // Only if pointer is over our SVG
         if (!isPointerOverSvg(e)) return;
@@ -708,10 +704,8 @@ function initZoom(svg, signal) {
         const absX = Math.abs(e.deltaX || 0);
         const absY = Math.abs(e.deltaY || 0);
 
-        // If not holding Ctrl/Cmd, check for horizontal/diagonal wheel input
         if (!e.ctrlKey && !e.metaKey) {
-            // If the event has a significant horizontal component (diagonal/trackpad)
-            // we prevent the horizontal scroll to avoid the page drifting sideways.
+            // Pprevent page drifting when scrolling.
             // Threshold: horizontal >= 0.5 * vertical (tunable)
             if (absX > 0 && absX >= absY * 0.5) {
                 e.preventDefault();
@@ -729,7 +723,6 @@ function initZoom(svg, signal) {
             return;
         }
 
-        // If we get here, Ctrl/Cmd is pressed -> handle zoom and prevent browser zoom
         e.preventDefault();
         e.stopPropagation();
         performZoom(e);
